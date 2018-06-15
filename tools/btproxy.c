@@ -40,6 +40,7 @@
 #include <sys/stat.h>
 #include <sys/socket.h>
 #include <sys/un.h>
+#include <sys/ioctl.h>
 
 #include <netdb.h>
 #include <arpa/inet.h>
@@ -532,6 +533,16 @@ static int open_channel(uint16_t index)
 {
 	struct sockaddr_hci addr;
 	int fd;
+	int ctl;
+
+	/* Close hci0  */
+	if ((ctl = socket(AF_BLUETOOTH, SOCK_RAW, BTPROTO_HCI)) < 0) {
+		perror("Can't open HCI socket.");
+		exit(1);
+	}
+
+	int err = ioctl(ctl, _IOW('H', 202, int), index);
+	close(ctl);
 
 	printf("Opening user channel for hci%u\n", hci_index);
 
@@ -540,7 +551,8 @@ static int open_channel(uint16_t index)
 		perror("Failed to open Bluetooth socket");
 		return -1;
 	}
-
+	
+	printf("bind interface %i\n", index);
 	memset(&addr, 0, sizeof(addr));
 	addr.hci_family = AF_BLUETOOTH;
 	addr.hci_dev = index;
