@@ -534,14 +534,20 @@ static int open_channel(uint16_t index)
 	struct sockaddr_hci addr;
 	int fd;
 	int ctl;
+	int err;
 
 	/* Close hci0  */
-	if ((ctl = socket(AF_BLUETOOTH, SOCK_RAW, BTPROTO_HCI)) < 0) {
+	ctl = socket(AF_BLUETOOTH, SOCK_RAW, BTPROTO_HCI);
+	if (ctl < 0) {
 		perror("Can't open HCI socket.");
 		exit(1);
 	}
 
-	int err = ioctl(ctl, _IOW('H', 202, int), index);
+	err = ioctl(ctl, _IOW('H', 202, int), index);
+	if (err) {
+		printf("Opening user channel for hci%u\n", hci_index);
+		return -1;
+	}
 	close(ctl);
 
 	printf("Opening user channel for hci%u\n", hci_index);
